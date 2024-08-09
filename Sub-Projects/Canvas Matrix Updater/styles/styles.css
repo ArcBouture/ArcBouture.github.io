@@ -1,0 +1,19 @@
+body{
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.background_image{
+    display: none;
+    height: 1080px;
+    width: 1920px;
+    z-index: 0;
+}
+
+#render_canvas{
+    position: absolute;
+    height: 1080px;
+    width: 1920px;
+    z-index: 0;
+}

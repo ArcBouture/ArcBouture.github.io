@@ -1,0 +1,62 @@
+body{
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background-color: black;
+    overflow: hidden;
+}
+
+#starfield_layer, #sub_projects_list{
+    position: absolute;
+    height: 100vh;
+    width: 100vw;
+}
+.starfield_layer > li{
+    position: absolute;
+    height: 3px;
+    width: 3px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+#sub_projects_list{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#sub_projects_list > div{
+    display: flex;
+    flex-direction: row;
+    margin-top: -30vh;
+    gap: 20px;
+}
+
+a{
+    width: 17vw;
+    height: 10vw;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1fr;
+    background-color: rgb(28, 27, 29);
+    text-decoration: none;
+}
+a > img{
+    width: 17vw;
+    height: 10vw;
+    border: solid 2px #bbb;
+    grid-row-start: 1;
+    grid-column-start: 1;
+    filter: drop-shadow(6px 6px 2px rgb(10, 10, 10));
+    z-index: 1;
+}
+a > h3{
+    font-size: 1.5vw;
+    text-align: center;
+    color: #bbb;
+    margin: 2vw;
+    filter: drop-shadow(0px 0px 2px rgb(10, 10, 10));
+    grid-row-start: 1;
+    grid-column-start: 1;
+    z-index: 2;
+}
