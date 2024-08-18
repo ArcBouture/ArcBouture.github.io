@@ -13,9 +13,9 @@ const DUSKDAWNELEM = BACKGROUNDIMAGES[1];
 const NIGHTELEM = BACKGROUNDIMAGES[2];
 
 // Define the rate at which to update the background (in milliseconds).
-const UPDATERATE = 5000;
+const UPDATERATE = 3000;
 // Define the amount of time before and after sunrise used for transitions (in milliseconds).
-const TRANSITIONTIME = (30*60*1000);
+const TRANSITIONTIME = (15*60*1000);
 
 // Store the opacity update step ammount by dividing the max opacity by the number of steps.
 const UPDATESTEP = 100 / (TRANSITIONTIME/UPDATERATE);
@@ -163,7 +163,7 @@ function SetSunriseBG(todaysMorning, todaysDusk, todaysSunset, todaysLeadToNight
     setTimeout(SetDayBG, timeTillNext, todaysDusk, todaysSunset, todaysLeadToNight, tomorrowsSunrise, newIntervallId);
 };
 
-function SetDayBG(todaysDusk, todaysSunset, todaysDusk, todaysLeadToNight, tomorrowsSunrise, intervallId){
+function SetDayBG(todaysDusk, todaysSunset, todaysLeadToNight, tomorrowsSunrise, intervallId){
     // Set the expected opacity values for this time.
     opacityValuesMemo = [100, 0, 0];
     // Update the background.
@@ -176,8 +176,9 @@ function SetDayBG(todaysDusk, todaysSunset, todaysDusk, todaysLeadToNight, tomor
     if (intervallId) {
         clearInterval(intervallId);
     }
+    
     // Wait to call the next step's function.
-    setTimeout(SetSunsetBG, (todaysDusk - currentTime), todaysSunset, todaysLeadToNight, tomorrowsSunrise, 0, false);
+    timeaoutId = setTimeout(SetSunsetBG, (todaysDusk - currentTime), todaysSunset, todaysLeadToNight, tomorrowsSunrise, 0, false);
 };
 
 function SetSunsetBG(todaysSunset, todaysLeadToNight, tomorrowsSunrise, intervallId, launch){
@@ -187,6 +188,7 @@ function SetSunsetBG(todaysSunset, todaysLeadToNight, tomorrowsSunrise, interval
     let currentTime = new Date();
     // Store the time between now and the next phase.
     let timeTillNext = (todaysSunset - currentTime);
+
 
     // If we're launching the app in the middle of a period, compute how many steps in we are in the transition.
     if (launch) {
