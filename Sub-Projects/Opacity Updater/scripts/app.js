@@ -7,6 +7,7 @@ const TOWN = '35000';
 const INSEE = '35238';
 
 // Store HTML elements.
+const FIREFLYCONTAINER = document.getElementById('firefly_container');
 const BACKGROUNDIMAGES = document.getElementsByClassName('background_image');
 const DAYELEM = BACKGROUNDIMAGES[0];
 const DUSKDAWNELEM = BACKGROUNDIMAGES[1];
@@ -16,6 +17,12 @@ const NIGHTELEM = BACKGROUNDIMAGES[2];
 const UPDATERATE = 3000;
 // Define the amount of time before and after sunrise used for transitions (in milliseconds).
 const TRANSITIONTIME = (15*60*1000);
+
+// Set the number of fireflies to spawn at night.
+const FIREFLIES = 25;
+// Get the height and width of the container.
+const CONTAINERWIDTH = FIREFLYCONTAINER.clientWidth;
+const CONTAINERHEIGHT = FIREFLYCONTAINER.clientHeight;
 
 // Store the opacity update step ammount by dividing the max opacity by the number of steps.
 const UPDATESTEP = 100 / (TRANSITIONTIME/UPDATERATE);
@@ -41,13 +48,13 @@ async function main(){
     let ephemeridToday = (await GetEphemeride(currentDate)).ephemeride;
     let ephemeridTomorrow = (await GetEphemeride(tomorrowsDate)).ephemeride;
     // Get the hour of sunrise, dawn, sunset and dusk.
-    let todaysSunrise = new Date(currentDateHourLess + 'T' + ephemeridToday['sunrise'] + ':00');
+    let todaysSunrise = new Date(currentDateHourLess + 'T' + ephemeridToday['sunrise']);
     let todaysLeadToSunrise = new Date(todaysSunrise.getTime() - TRANSITIONTIME);
     let todaysMorning = new Date(todaysSunrise.getTime() + TRANSITIONTIME);
-    let todaysSunset = new Date(currentDateHourLess + 'T' + ephemeridToday['sunset'] + ':00');
+    let todaysSunset = new Date(currentDateHourLess + 'T' + ephemeridToday['sunset']);
     let todaysDusk = new Date(todaysSunset.getTime() - TRANSITIONTIME);
     let todaysLeadToNight = new Date(todaysSunset.getTime() + TRANSITIONTIME);
-    let tomorrowsSunrise = new Date(tomorrowsDateHourLess + 'T' + ephemeridTomorrow['sunrise'] + ':00');
+    let tomorrowsSunrise = new Date(tomorrowsDateHourLess + 'T' + ephemeridTomorrow['sunrise']);
 
     // This router is used to initialize the event chain no matter when the program starts.
     // If the current time is between the end of dawn and the start of dusk, then it's the day.
@@ -75,7 +82,7 @@ async function main(){
         SetNightBG(tomorrowsSunrise, 0);
     // otherwise an error occured.
     } else {
-        console.log('huh?');
+        console.log(currentDate);
     };
 };
 // -------------------------------------------------------------------------------------------
@@ -211,7 +218,6 @@ function SetSunsetBG(todaysSunset, todaysLeadToNight, tomorrowsSunrise, interval
     setTimeout(SetLeadToNightBG, timeTillNext, todaysLeadToNight, tomorrowsSunrise, newIntervallId, false);
 };
 
-
 function SetLeadToNightBG(todaysLeadToNight, tomorrowsSunrise, intervallId, launch){
     // Set the expected opacity values for this time.
     opacityValuesMemo = [0, 100, 0];
@@ -248,6 +254,7 @@ async function SetNightBG(tomorrowsSunrise, intervallId){
     DAYELEM.style.opacity = (opacityValuesMemo[0] + '%');
     DUSKDAWNELEM.style.opacity = (opacityValuesMemo[1] + '%')
     NIGHTELEM.style.opacity = (opacityValuesMemo[2] + '%');
+    FIREFLYCONTAINER.style.opacity = '100%';
     // Get the current time.
     let currentTime = new Date();
 
@@ -264,10 +271,10 @@ async function SetNightBG(tomorrowsSunrise, intervallId){
     // Get the hour of sunrise, dawn, sunset and dusk.
     let tomorrowsLeadToSunrise = new Date(tomorrowsSunrise.getTime() - TRANSITIONTIME);
     let tomorrowsMorning = new Date(tomorrowsSunrise.getTime() + TRANSITIONTIME);
-    let tomorrowsSunset = new Date(tomorrowsDateHourLess + 'T' + ephemeridTomorrow['sunset'] + ':00');
+    let tomorrowsSunset = new Date(tomorrowsDateHourLess + 'T' + ephemeridTomorrow['sunset']);
     let tomorrowsDusk = new Date(tomorrowsSunset.getTime() - TRANSITIONTIME);
     let tomorrowsLeadToNight = new Date(tomorrowsSunset.getTime() + TRANSITIONTIME);
-    let tomorrowstomorrowsSunrise = new Date(tomorrowstomorrowDateHourLess + 'T' + ephemeridTomorrowsTomorrow['sunrise'] + ':00');
+    let tomorrowstomorrowsSunrise = new Date(tomorrowstomorrowDateHourLess + 'T' + ephemeridTomorrowsTomorrow['sunrise']);
     // -------------------------------------------------------------------------
 
     // If there is a interval currently running, terminate it.
@@ -293,6 +300,8 @@ function BackgroundUpdater(fromFrame, toFrame){
         case 'night':
             opacityValuesMemo[2] -= UPDATESTEP;
             NIGHTELEM.style.opacity = (opacityValuesMemo[2] + '%');
+            // Slowly remove the night-time effects.
+            FIREFLYCONTAINER.style.opacity = (opacityValuesMemo[2] + '%');
             break;    
         default:
             break;
@@ -310,14 +319,106 @@ function BackgroundUpdater(fromFrame, toFrame){
         case 'night':
             opacityValuesMemo[2] += UPDATESTEP;
             NIGHTELEM.style.opacity = (opacityValuesMemo[2] + '%');
+            // Slowly add the night-time effects.
+            FIREFLYCONTAINER.style.opacity = (opacityValuesMemo[2] + '%');
             break;    
         default:
             break;
     }
 };
 // -------------------------------------------------------------------------------------------
+
+// --------------------------- Fireflies Generation and Animations ---------------------------
+//  Create a function to generate a set ammount of fireflies for the night scene.
+function FirefliesGenerator() {
+    // Generate as many fireflies as indicated by the constant defined at the top of this file.
+    for (var i = 0; i < FIREFLIES; i++) {
+        // Append the firefly div to the container.
+        var firefly = FIREFLYCONTAINER.appendChild(document.createElement("div"));
+        // Add the "firefly" classname to the element.
+        firefly.className = "firefly";
+
+        // Assign to the new element a random position inside the container.
+        firefly.style.left = Math.random() * CONTAINERWIDTH + 'px';
+        firefly.style.top = Math.random() * CONTAINERHEIGHT + 'px';
+
+        // Animate the firefly.
+        flyTheFirefly(firefly);
+    }
+};
+
+function flyTheFirefly(fireflyElem) {
+    // ---------------------- Fade ----------------------
+    // Set the parameters for the fade animation of fireflies.
+    var keyframesParamsFade = {
+        delay: (Math.floor(Math.random() * 2) + 1) * 1000,
+        duration : 3000,
+        ease : 'ease-in-out',
+        fill :'forwards',
+    }
+    // Set the keyframes for the fade animation of fireflies.
+    var keyframesFade = [
+        {
+            opacity : '100%',
+        },
+        {
+            opacity : '25%',
+        },
+        {
+            opacity : '100%',
+        },
+    ];
+    // Define an interval for the fade effect of fireflies.
+    // Create a dictionnary to hold the current interval ID.
+    var intervalID = {};
+    // Create a function for the interval that changes the random time between iterations by reseting the interval.
+    function FadeIntervalFunction(intervalID) {
+        // Clear the current interval (try in order to ignore the error that would be raised by the initial, ID-less call).
+        try {
+            clearInterval(intervalID.id);
+        } finally{
+            // Animate the object.
+            fireflyElem.animate(keyframesFade, keyframesParamsFade);
+            // Generate an interval's delay.
+            IntervalFade = (Math.floor(Math.random() * 2 * 6) + 1) * 1000;
+            // Set a new interval using the new delay.
+            intervalID.id = setInterval(FadeIntervalFunction.bind(null, intervalID), IntervalFade);
+        } 
+    }
+    FadeIntervalFunction(intervalID)
+    // --------------------------------------------------
+    
+    // ----------------------- Fly ----------------------
+    function FlyIntervalFunction() {
+        // Set the parameters for the flying animation of fireflies.
+        var keyframesParamsFade = {
+            duration: (Math.floor(Math.random() * 10) + 1) * 10000,
+            ease : 'ease-in-out',
+            fill :'forwards',
+        }
+        // Set the keyframes for the flying animation of fireflies.
+        var keyframesFade = [
+            {
+            },
+            {
+                left : Math.random() * CONTAINERWIDTH + 'px',
+                top : Math.random() * CONTAINERHEIGHT + 'px',
+            }
+        ];
+        // Trigger the flying animation of the firefly given the generated parameters, and store the animation ID in a variable. 
+        var flyAnimation = fireflyElem.animate(keyframesFade, keyframesParamsFade);
+        // Create an event handler for when the animation ends to call the function again, generating a new path and a new animation for the firefly's flight.
+        flyAnimation.onfinish = () => {
+            FlyIntervalFunction([, ])
+        };
+    };
+    FlyIntervalFunction([, ])
+    // --------------------------------------------------
+};
+// -------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------- Calls -------------------------------------------------
-main()
+FirefliesGenerator();
+main();
 // ---------------------------------------------------------------------------------------------------------

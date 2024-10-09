@@ -10,3 +10,24 @@ body{
     height: 1080px;
     width: 1920px;
 }
+
+/* ------------------------ Night-Time Fireflies ------------------------ */
+  
+.firefly{
+    left: 50%;
+    top: 50%;
+    width:4px;
+    height:4px;
+    position:relative;
+    background-color: #ecc45e;
+    box-shadow:0px 0px 17px 2px wheat;
+    border-radius: 50%;
+}
+  
+#firefly_container{
+  /*   width: 30%; */
+    margin: 0 auto;
+    height: 90vh;
+    position: relative;
+    opacity: 0%;
+}
