@@ -20,6 +20,8 @@ const CLOUDCOUNTMAX = 20;
 // ----------------------------------------------- Variables -----------------------------------------------
 // Store the last know rainfall value.
 var lastRainfallValue = 0
+// Store a Bool of whether the top layer clouds are active or retracted.
+var topLayerCloudsState = 0
 // ---------------------------------------------------------------------------------------------------------
 
 // ----------------------------------------------- Functions -----------------------------------------------
@@ -45,14 +47,24 @@ async function meteoCheck(){
     // Select only the rainfall value.
     let newRainfallValue = meteoData[0].observation.rainfall.value
     // Grey out the background as a percentage of black.
-    BGGREYING.style.opacity = newRainfallValue*10 + '%'
+    BGGREYING.style.opacity = Math.ceil(newRainfallValue)*10 + '%'
     // Ceil the value to avoid decimals, and multiply by 2 to see more of an impact on the cloud quantity, with this value hence transformed, we can use it directly in the clouds generation.
-    let correctedRainfallValue = Math.ceil(newRainfallValue) * 2;
+    let correctedRainfallValue = Math.ceil(newRainfallValue * 2);
 
     OUTPUTTEST3.textContent = newRainfallValue + ', ' + correctedRainfallValue;
 
     // Compute the difference between the previous rainfall value and now. It represents the number of clouds to remove in case of a lowering rainfall.
     let rainfallDiff = correctedRainfallValue - lastRainfallValue;
+
+    // If we have a corrected value of rainfall over 4 and if the top layers clouds aren't already active, we move in the 3 top layer clouds.
+    if (correctedRainfallValue > 4 & topLayerCloudsState == 0){
+        MoveInAnOutTopLayerClouds();
+        topLayerCloudsState = 1;
+    // Otherwise we retract them.
+    } else if (correctedRainfallValue < 4 & topLayerCloudsState == 1) { 
+        MoveInAnOutTopLayerClouds(1);
+        topLayerCloudsState = 0;
+    };
     
     // Define a list of actions depending on the result of the value.
     // Less or equal to 0 is the absence of rainfall, we set the stage as "sunny".
@@ -85,7 +97,7 @@ async function meteoCheck(){
 }
 // -------------------------------------------------------------------------------
 
-// ------------------------------ Clouds Animations ------------------------------
+// ------------------------- Automated Clouds Animations -------------------------
 // We'll use it a lot so make a function to generate a number in a specified interval.
 function IntervalRand(min, max) {
     return Math.random() * (max - min) + min;
@@ -168,6 +180,7 @@ function MoveInClouds(cloudsList) {
 
             },
             {
+                opacity : '100%',
                 left : IntervalRand(BGGREYING.offsetLeft - currentCloud.clientWidth/3, BGGREYING.offsetLeft + BGGREYING.clientWidth - currentCloud.clientWidth/2) + 'px',
             }
         ];
@@ -200,6 +213,7 @@ function MoveOutClouds(cloudsList) {
 
                 },
                 {
+                    opacity : '0%',
                     left : Math.random() * (BGGREYING.offsetLeft - currentCloud.clientWidth) + 'px',
                 }
             ];
@@ -208,7 +222,8 @@ function MoveOutClouds(cloudsList) {
                 {
 
                 },
-                {
+                { 
+                    opacity : '0%',
                     left : IntervalRand((BGGREYING.offsetLeft + BGGREYING.clientWidth), (BGGREYING.offsetLeft * 2 + BGGREYING.clientWidth - currentCloud.clientWidth)) + 'px',
                 }
             ];
@@ -224,13 +239,67 @@ function MoveOutClouds(cloudsList) {
         });
     };
 };
+// -------------------------------------------------------------------------------
+
+// --------------------------- Manual Cloud Animations ---------------------------
+// Create a function to move the three top layer clouds in and out of position, in case of a rainfall value superior to 4.
+function MoveInAnOutTopLayerClouds(out = 0) {
+    // Instantiate a value that will multiply the direction of the animations translates. Depending on wether the required animations is "in" or "out", the sign will be reversed, changing
+    // the animation direction.
+    let outMult;
+    if (out){
+        outMult = -1;
+    } else {
+        outMult = 1;
+    }
+
+    // Set the parameters for the moving animations of the first cloud.
+    var keyframeMoveInParams1 = {
+        duration : 4000,
+        easing : 'cubic-bezier(.40,.84,.44,1)',
+        fill :'forwards',
+    }
+    // Set the parameters for the moving animations of the second clouds.
+    var keyframeMoveInParams2 = {
+        duration : 5000,
+        easing : 'cubic-bezier(.40,.84,.44,1)',
+        fill :'forwards',
+    }
+    // Set the parameters for the moving animations of the third clouds.
+    var keyframeMoveInParams3 = {
+        duration : 4600,
+        easing : 'cubic-bezier(.40,.84,.44,1)',
+        fill :'forwards',
+    }
+
+    // Set a keyframe that moves the clouds located on the left side towards their targeted positions. Depending on whether we want them in or out, we lower or tune up the opacity.
+    var keyframeMoveInFromLeft = [
+        {
+
+        },
+        {
+            opacity : (100 - 100 * out) + '%',
+            transform : 'translate(' + (400 * outMult)  + 'px, 0px)',
+        }
+    ];
+    // Set a keyframe that moves the cloud located on the right side towards its targeted position.
+    var keyframeMoveInFromRight = [
+        {
+        },
+        {
+            opacity : (100 - 100 * out) + '%',
+            transform : 'translate(' + (-400 * outMult)  + 'px, 0px)',
+        }
+    ];
+    // Animate de clouds.
+    CLOUDCONTAINER1.children[0].animate(keyframeMoveInFromLeft, keyframeMoveInParams1);
+    CLOUDCONTAINER1.children[1].animate(keyframeMoveInFromLeft, keyframeMoveInParams2);
+    CLOUDCONTAINER1.children[2].animate(keyframeMoveInFromRight, keyframeMoveInParams3);
+};
+// -------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------- Calls -------------------------------------------------
 // Run meteo check every 10 minutes.
 setInterval(meteoCheck(), 600000);
-// var tempClouds = GenerateClouds(6)
-// MoveInClouds(tempClouds)
-// MoveOutClouds(tempClouds.slice(-2))
-
 // ---------------------------------------------------------------------------------------------------------
